@@ -1,0 +1,159 @@
+<head>
+<script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.2/css/bulma.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js"></script>
+<style>
+
+a{
+    background-color: hsl(0, 0%, 90%);
+}
+a:nth-child(even) {
+    background-color: hsl(0, 0%, 96%);
+}
+
+</style>
+<script>
+
+
+
+/*
+
+function removeorder(id){
+
+    fetch("https://admin.ferox.host/api/delete", 
+         { method: 'post', 
+
+
+         credentials: "same-origin",
+             body: JSON.stringify({
+    id: id,
+  }), 
+             headers: {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json'
+
+
+  }
+         }).then(resp => { 
+        console.log(id);
+    window.location.replace("https://admin.ferox.host/admin");
+});
+}
+
+*/
+
+
+
+function pay(id, price){
+document.getElementById('process').classList.add('is-active');
+    fetch("/api/generateinvoice/" + document.getElementById('email').placeholder + '/' + price + '/' + id, 
+         { method: 'post', 
+         credentials: "same-origin",
+             body: JSON.stringify({
+    id: id,
+  }), 
+             headers: {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+    'Authorization': 'Basic ' + btoa('ferox:latijn')
+
+
+  }
+         }).then(res => res.json())
+    .then(json => {
+
+window.location.replace(json.links[4].href);
+    });
+  //  window.location.replace("https://client.ferox.host/admin");
+
+}
+
+
+</script>
+<style>
+.mailput{
+  width:20% !important;
+}
+html{
+  background-color: #209cee;
+}
+.is-primary{
+  background-color: #3273dc !important;
+}
+
+</style>
+</head>
+
+
+<body>
+
+<div class="modal" id="process">
+  <div class="modal-background"></div>
+  <div class="modal-content">
+    <div class="box">Processing...</div>
+  </div>
+</div>
+
+
+<div class="title">  
+    <i class="fab fa-facebook-square"></i>erox Hosting
+</div>  
+
+<div class="columns   is-mobile">
+    <div class="column is-half">
+<aside class="menu">
+
+      <p class="menu-label is-link">
+    Orders
+  </p>
+
+<ul class="menu-list">
+
+    <a class="is-active">Running orders</a>
+    <ul>
+    <% for(var i=0; i<orders.length; i++) { %>
+
+
+        
+            <a href='#'>
+                <li><small>item</small> <%= orders[i].item %></li>
+                <li><small>price</small> €<%= orders[i].price %></li>
+                <li><small>due</small> <%= orders[i].due %></li>
+                <li>
+                    <button class="button" disabled id="pay-<%= orders[i].item %>" onclick="pay(<%= orders[i].id %>, <%= orders[i].price %>)">pay</button>
+                    <script>
+            var duedate = moment('<%= orders[i].due %>', "DD-MM-YYYY");
+            var diff = duedate.diff(moment(), 'days')
+
+                      if(diff < 7){
+document.getElementById('pay-<%= orders[i].item %>').disabled = false;
+if(diff < 2){
+    document.getElementById('pay-<%= orders[i].item %>').classList.add("is-danger")
+}
+                      }
+                                          </script>
+              <!--      <input class="input dateput" type="text" value="<%= orders[i].due %>" id="<%= orders[i].id %>" placeholder="new date">
+               <button class="button" id="delete" onclick="update(<%= orders[i].id %>, 'due')">Set date</button>-->
+             </li>
+            </a>
+        
+    <% } %>
+<ul>
+
+
+</ul>
+</aside>
+</div>
+  <div class="column is-half">
+<div class="is-parent notification is-primary">
+<div>
+<a href="https://ferox.host"> <button class="button">Back to site</button></a>
+<a href="https://discord.gg/vhxsFfH"><button class="button">To discord</button></a>
+<a href="https://panel.ferox.host"><button class="button">Minecraft Panel</button></a>
+<input class="input mailput" type="text" value="<%= email %>" id="email" disabled placeholder="<%= email %>">
+</div>
+</div> <!-- collumns-->
+</div>
+
+
+</body>

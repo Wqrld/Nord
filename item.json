@@ -1,0 +1,27 @@
+{
+    
+    "merchant_info": {
+        "email": "luc@imluc.ga",
+        "business_name": "Ferox Hosting"
+    },
+    "billing_info": [{
+        "email": "luc@imluc.ga"
+    }],
+    "items": [{
+        "name": "Hosting",
+        "quantity": 1,
+        "unit_price": {
+            "currency": "EUR",
+            "value": 1
+        }
+    }],
+    "note": "Ferox Hosting is never required to refund you. By ordering you agree to not chargeback.",
+    "payment_term": {
+        "term_type": "NET_45"
+    },
+    "tax_inclusive": false,
+    "total_amount": {
+        "currency": "EUR",
+        "value": "1.00"
+    }
+}
