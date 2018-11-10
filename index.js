@@ -128,7 +128,7 @@ const checkinvoices = new CronJob('0 0 8 * * *', function() {
                 Wqrld.sendMessage(`**${row.username} heeft zijn €${row.price} niet voor ${row.due} betaald\n id: ${row.id}**`);
                 user = client.users.find('username', row.username)
  if(user){
-user.sendMessage(`Dear ${row.username},  You didn't pay €${row.price} before ${row.due} so your service has been automatically cancelled`);
+user.sendMessage(`Dear ${row.username},  You didn't pay €${row.price} before ${row.due} so your service has been automatically cancelled\nYou can pay at https://admin.ferox.host or in our discord by making a ticket with -order.`);
                 }else{
                    Wqrld.sendMessage(`${row.username} not found, cancel his service.`); 
                 }

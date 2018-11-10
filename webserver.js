@@ -172,9 +172,29 @@ item: req.params.what
 
 apirouter.post('/paypalhook/:what', (req, res) => {
 var body = req.body;
-console.log(req.params.what + "\n" + JSON.stringify(body.resource.billing_info, null, 4));
+console.log(chalk.red(req.params.what + "\n" + JSON.stringify(body), null, 4));
 logger.info(`id: ${body.id}\n price: ${body.resource.paid_amount.paypal.value} ${body.resource.paid_amount.paypal.currency}\n email: ${body.resource.billing_info[0].email}, ${body.resource.billing_info[0].business_name}`);
 res.json({success: true});
+sql.query(`SELECT * FROM orders WHERE id = '${body.resource.items[0].name}'`, (err, rows) => {
+    console.log(rows);
+    console.log(body.resource.items[0].unit_price.currency + "\n" + Math.floor(body.resource.items[0].unit_price.value) + "\n")
+    if(rows.length < 1){
+        console.log("non-item purchase");
+    }else{
+        // real item purchased
+
+        
+        if(body.resource.items[0].unit_price.currency == "EUR" && Math.floor(body.resource.items[0].unit_price.value) == rows[0].price){
+            logger.info(`\`id: ${body.id}\n price: ${body.resource.paid_amount.paypal.value} ${body.resource.paid_amount.paypal.currency}\n email: ${body.resource.billing_info[0].email}, ${body.resource.billing_info[0].business_name}\``);
+//real item purchased with right price
+            console.log("got real transaction")
+        }
+    }
+
+
+});
+
+
 });
 
 
