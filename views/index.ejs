@@ -121,7 +121,9 @@ html{
                 <li><small>due</small> <%= orders[i].due %></li>
                 <li>
                     <button class="button" disabled id="pay-<%= orders[i].item %>" onclick="pay(<%= orders[i].id %>, <%= orders[i].price %>)">pay</button>
-                    <script>
+                    <button class="button" disabled id="cancel-<%= orders[i].item %>" onclick="cancel(<%= orders[i].id %>, <%= orders[i].price %>)">cancel</button>
+                    
+                 <script>
             var duedate = moment('<%= orders[i].due %>', "DD-MM-YYYY");
             var diff = duedate.diff(moment(), 'days')
 
