@@ -136,17 +136,21 @@ req.admin = true;
 })
 
 apirouter.post('/generateinvoice/:who/:amount/:id*?', function(req, res) {
+/*
+who: email, amount: amount, id: order id
+*/
+
 if(!req.admin){
     res.redirect("/");
     return;
 }
 if(!req.params.id){
-    var id = (new Date).getTime()
+    var id = (new Date).getTime()//generate new order id
 }else{
     var id = req.params.id
 }
 
-item.items[0].name = id;
+item.items[0].name = id;//assign order id
         item.items[0].unit_price.value = parseInt(req.params.amount);
         item.billing_info[0].email = req.params.who;
 
@@ -171,26 +175,80 @@ item: req.params.what
 
 
 apirouter.post('/paypalhook/:what', (req, res) => {
+    var orders = client.channels.get('495344580237983747');
+var children = orders.children.array();
+
+children.forEach(function(channel, i){
+
+            if (channel.topic == undefined) {
+            channel.send("Status: **Awaiting order**")
+        } else {
+            paypal.invoice.get(channel.topic, function(error, invoice) {
+                if(invoice.status == "SENT"){
+channel.send("Status: **Awaiting payment**")
+                }else{
+                    channel.send("Status: **" + invoice.status + "**")
+                }
+                
+
+            });
+        }
+})
 
 
-paypal.invoice.get(req.body.id, function (error, body) {
+
+
+
+
+paypal.invoice.get(req.body.resource.id, function (error, body) {
+    // Get invoice id
 if(error){
     console.log("invoice fake");
     res.json({success: false});
     return;
 }else{
     console.log("invoice exists")
-//Invoice with same id exists
+//Invoice with same invoice id exists
 
     console.log(chalk.red(req.params.what + "\n" + JSON.stringify(body), null, 4));
     logger.info(`id: ${body.id}\n price: ${body.resource.paid_amount.paypal.value} ${body.resource.paid_amount.paypal.currency}\n email: ${body.resource.billing_info[0].email}, ${body.resource.billing_info[0].business_name}`);
     res.json({success: true});
     sql.query(`SELECT * FROM orders WHERE id = '${body.resource.items[0].name}'`, (err, rows) => {
+//check if we have a order with the orderid
+
         console.log(rows);
         console.log(body.resource.items[0].unit_price.currency + "\n" + Math.floor(body.resource.items[0].unit_price.value) + "\n")
 
-            // There is a item with a matching id
-    
+            
+    if(rows.length < 1){
+        //This might be a new order, or fake
+        // How do we verify that this is a new order
+
+        //
+if(body.resource.status == "PAID"){
+//Create new order
+/*
+var command = `INSERT INTO orders VALUES (${body.resource.items[0].name}, "${req.body.username}", "${req.body.item}", ${req.body.price}, "${req.body.due}", "${req.body.userid}")`
+console.log(chalk.green(command));
+
+sql.query(command, (err, rows) => {
+    if(err){console.log(err)}
+
+});*/
+/*
+get item from req.body
+get item price from db
+get user id from req.body
+get username from req.body
+set duedate to now
+
+if item price is right insert
+
+*/
+
+
+}
+    }
             console.log(body);
             if(
                 rows.length > 0 &&

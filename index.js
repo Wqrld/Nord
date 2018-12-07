@@ -14,10 +14,15 @@ var CronJob = require('cron').CronJob;
 var moment = require('moment');
 var redis = require("redis"),
     red = redis.createClient();
-
-var sub = redis.createClient(), pub = redis.createClient();
+const ipRegex = require('ip-regex');
+var sub = redis.createClient(),
+    pub = redis.createClient();
 var util = require('util')
 const axios = require('axios');
+
+var express = require('express')
+var app = express()
+
 Array.prototype.random = function() {
     return this[Math.floor((Math.random() * this.length))];
 }
@@ -35,15 +40,16 @@ paypal.configure({
     'client_secret': config.paypal_secret
 });
 var commands = new Map();
-var mysql      = require('mysql');
+var mysql = require('mysql');
 var sql = mysql.createPool({
-    connectionLimit : 10,
-  host     : 'localhost',
-  user     : 'root',
-  password : config.db_password,
-  database : 'host'
+    connectionLimit: 10,
+    host: 'localhost',
+    user: 'root',
+    password: config.db_password,
+    database: 'host'
 });
-
+var domain = require('domain-regex');
+const Gamedig = require('gamedig');
 
 function clean(text) {
     if (typeof(text) === "string")
@@ -51,6 +57,9 @@ function clean(text) {
     else
         return text;
 }
+
+
+
 
 
 
@@ -84,83 +93,56 @@ function isThisPM(message, cmd) {
 */
 // Startup console message
 client.on("ready", () => {
-    client.user.setActivity("-new | Ferox");
-    console.log(`Bot has started, with ${client.users.size} users, in ${client.channels.size} channels of Ferox Hosting`);
-
-
+    client.user.setActivity("NORD");
+    console.log(`Bot has started, with ${client.users.size} users, in ${client.channels.size} channels of nord (vpn)`);
 
 
 });
+
+
+app.get('/paypalhook', function (req, res) {
+    res.send('hello world')
+    var orders = client.channels.get('518411452470525963');
+    var children = orders.children.array();
+    
+    children.forEach(function(channel, i){
+    
+          /*      if (channel.topic == undefined) {
+             //   channel.send("Status: **Awaiting order**")
+            } else {
+              */  
+             
+             if (channel.topic != undefined) {
+                paypal.invoice.get(channel.topic, function(error, invoice) {
+                    if(invoice.status == "PAID"){
+                        if(!channel.topic == "Paid"){
+                        channel.send("Status: **" + invoice.status + "**")
+
+                        message.channel.setTopic("Paid");
+                        }
+                    }
+                    
+                
+                });
+      }
+    
+
+             
+    });   
+  });
+
+
+  app.listen(1337);
 
 /*
 Runs every day at 8:00AM
 //0 0 8 * * *
 */
-const checkinvoices = new CronJob('0 0 8 * * *', function() {
-    console.log("running cron");
-
-/*
-        db.all("SELECT * FROM orders;", [], (err, rows) => {
-            rows.forEach((row) => {
-                message.channel.send(`${row.username} has item ${row.item} with price ${row.price} due at ${row.due}`);
-*/
-
-
-    var command = `SELECT * FROM orders`;
-
-
-
-
-    sql.query(command, (err, rows) => {
-        console.log("r: " + rows);
-        if (err) {
-            console.log(err);
-        }
-        rows.forEach((row) => {
-            console.log("row processed");
-            var duedate = moment(row.due, "DD-MM-YYYY");
-            var now = moment();
-            var diff = duedate.diff(now, 'days')
-            console.log(`now: ${now}, due: ${duedate}`)
-            if (diff < 0) {
-                //cancel the order
-                var Wqrld = client.users.find('username', "Wqrld")
-                Wqrld.sendMessage(`**${row.username} heeft zijn €${row.price} niet voor ${row.due} betaald\n id: ${row.id}**`);
-                user = client.users.find('username', row.username)
- if(user){
-user.sendMessage(`Dear ${row.username},  You didn't pay €${row.price} before ${row.due} so your service has been automatically cancelled\nYou can pay at https://admin.ferox.host or in our discord by making a ticket with -order.`);
-                }else{
-                   Wqrld.sendMessage(`${row.username} not found, cancel his service.`); 
-                }
-
-                console.log("cancel order");
-                return
-            }
-            console.log(diff);
-            if (diff < 5) {
-                user = client.users.find('username', row.username)
-                var Wqrld = client.users.find('username', "Wqrld")
-                Wqrld.sendMessage(`${row.username} moet €${row.price} voor ${row.due} betalen`);
-                if(user){
-user.sendMessage(`Dear ${row.username}, You will need to pay your invoice of €${row.price} before ${row.due} to continue using this service.`);
-                }else{
-                   Wqrld.sendMessage(`${row.username} not found`); 
-                }
-                
-
-
-
-            }
-
-
-
-
-});
-        });
-
 // Check status of tickets
 
 // Check order status
+
+/*
     var orders = client.channels.get('495344580237983747');
 var children = orders.children.array();
 
@@ -183,11 +165,8 @@ channel.send("Status: **Awaiting payment**")
 
 
 
-
-    }, null, true, 'Europe/Berlin');
-
 checkinvoices.start()
-
+*/
 // Listener - Bot joins new servers
 // Event listener for new members
 client.on('guildMemberAdd', member => {
@@ -206,16 +185,40 @@ client.on('guildMemberAdd', member => {
     channel.send(welcomemsgs.random());
 });
 
+const events = {
+    MESSAGE_REACTION_ADD: 'messageReactionAdd',
+    MESSAGE_REACTION_REMOVE: 'messageReactionRemove',
+};
+
+
+client.on('raw', async event => {
+    if (!events.hasOwnProperty(event.t)) return;
+
+    const {
+        d: data
+    } = event;
+    const user = client.users.get(data.user_id);
+    const channel = client.channels.get(data.channel_id) || await user.createDM();
+
+    if (channel.messages.has(data.message_id)) return;
+
+    const message = await channel.fetchMessage(data.message_id);
+    const emojiKey = (data.emoji.id) ? `${data.emoji.name}:${data.emoji.id}` : data.emoji.name;
+    const reaction = message.reactions.get(emojiKey);
+
+    client.emit(events[event.t], reaction, user);
+});
+
 
 // Quick reply messages 2-9 27 28
 const responseObject = {
-    "-links": "https://ferox.host \nhttps://panel.ferox.host\n https://discord.gg/vhxsFfH",
-    "-panel": "https://panel.ferox.host",
-    "-discord": "https://discord.gg/vhxsFfH",
+    "-links": "soon",
+    "-discord": "soon",
     "Quick Response 4": ""
 };
 
 // Just saying what to do with the objects above
+
 client.on("message", (message) => {
     if (responseObject[message.content]) {
         message.delete()
@@ -234,26 +237,260 @@ client.on("message", (message) => {
     }
 });
 
+function shorten(text) {
+
+    return text.substring(0, 4);
+}
+
+function createchannel(message, c) {
+    let role = message.guild.roles.find("name", "*");
+    let role2 = message.guild.roles.find("name", "@everyone");
+    c.overwritePermissions(role, {
+        SEND_MESSAGES: true,
+        READ_MESSAGES: true
+    });
+    c.overwritePermissions(role2, {
+        SEND_MESSAGES: false,
+        READ_MESSAGES: false
+    });
+    c.overwritePermissions(message.author, {
+        SEND_MESSAGES: true,
+        READ_MESSAGES: true
+    });
+
+}
+
+const status = {
+    "Wqrld": {
+        "message": "",
+        "budget": ""
+
+    },
+};
+client.on('messageReactionAdd', (reaction, user) => {
+
+if (reaction.message.channel != reaction.message.guild.channels.find(c => c.name == "commissions")) return;
+if(!user.bot && reaction.emoji.name === "✅"){
+//console.log("reaction!" + reaction.message.reactions.array().length);
+if(reaction.message.reactions.array().length != 1){return}
+
+
+//console.log(reaction.message.embeds[0].fields);
+
+
+var id = reaction.message.embeds[0].fields[4].value;
+var channel = client.guilds.get('517394741911093268').channels.find(c => c.name == id);
+console.log(id + "\n" + channel)
+channel.send("<@" + user.id + "> Has claimed your comission\nPlease discuss a price and when ready type -invoice (amount)");
+channel.overwritePermissions(user, {
+    SEND_MESSAGES: true,
+    READ_MESSAGES: true
+});
+
+
+}
+
+
+});
+
+
+
+client.on('messageReactionAdd', (reaction, user) => {
+    status[user.id] = {};
+
+
+    message = reaction.message;
+    message.author = user;
+
+    // if (user.bot) return;
+    if (reaction.message.channel != reaction.message.guild.channels.find(c => c.name == "ticket-creation")) return;
+    if (reaction.emoji.name === "🎟") {
+        console.log("hhh");
+      if(user.bot) {return}
+       reaction.remove(user);
+
+
+        if (!message.guild.channels.exists("name", "ticket-" + shorten(message.author.id))) {
+            message.guild.createChannel(`ticket-${shorten(message.author.id)}`, "text").then(c => {
+                c.setParent('518411134953586690');
+                createchannel(message, c);
+
+                const embed = new Discord.RichEmbed()
+                    .setColor('#36393f')
+                    .addField(`Hey ${message.author.username}!`,
+                        `Please try explain your request in as much detail as possible. Our **Freelancers** will be here soon to help.`)
+                    .setTimestamp();
+
+
+
+                    
+                c.send({
+                        embed: embed
+                    }).then(function(message) {
+ticketchannel = message;
+
+                        //
+
+                        // Create a message collector
+                        const filter = m => m.author == user;
+                        const collector = message.channel.createMessageCollector(filter, {
+                            time: 15000
+                        });
+                        collector.on('collect', m => {
+
+
+                            collector.stop();
+
+status[user.id]["message"] = m.content; 
+
+
+                            m.reply("Do you have a budget? Press on the ‘n’ emoji for no, specify it if yes.").then(function(m) {
+
+
+                                m.react("🇳");
+                                
+                                const n = (reaction, user) => reaction.emoji.name === "🇳" && !user.bot;
+                                const noc = m.createReactionCollector(n, {
+                                    time: 30000
+                                });
+
+                                noc.on('collect', reaction => {
+                                    noc.stop();
+                                    //got budget
+                                    status[user.id]["budget"] = "quote"; 
+
+                                    m.reply("What’s your deadline?, if none say \"no\"").then(function(m) {
+                                        //got deadline
+                                        const filter = m => m.author == user;
+                                        const collector = message.channel.createMessageCollector(filter, {
+                                            time: 15000
+                                        });
+                                        collector.on('collect', m => {
+                                            status[user.id]["deadline"] = m.content;
+                                            var channel = client.channels.get('518433045330526243');
+                                           m.channel.send("Your request has been sent to our freelancers");
+                                           const embed = new Discord.RichEmbed()
+                                           .setColor(0xdd2e44)
+                                           .setTitle("Comission")
+                                           .setFooter("Bot by Wqrld#7373")
+                                         //  .setThumbnail(`https://ferox.host/assets/images/logo.png`)
+                                           //.setImage('https://ferox.host/assets/images/logo.png')
+                                           .addField(`Client`, message.author, true)
+                                           .addField(`request`, status[user.id]["message"], true)
+                                           .addField(`Budget`, status[user.id]["budget"], true)
+                                           .addField(`Deadline`, status[user.id]["deadline"], true)
+                                           .addField(`ID`, m.channel.name, true)
+                                           .addBlankField()
+                                           .addField(`Status`, "Awaiting claim")
+                                           .setTimestamp();
+                                       channel.send({
+                                           embed: embed
+                                       }).then(function(m){
+                                           m.react("✅");
+                                       });
+
+                                        });
+
+                                    });
+
+                                });
+
+                                const filter = m => m.author == user;
+                                const collector = message.channel.createMessageCollector(filter, {
+                                    time: 15000
+                                });
+                                collector.on('collect', m => {
+                                    collector.stop();
+                                    //got budget
+                                    status[user.id]["budget"] = m.content; 
+                                    
+                                    m.reply("What’s your deadline?, if none say \"no\"").then(function(m) {
+                                        //got deadline
+                                        const filter = m => m.author == user;
+                                        const collector = message.channel.createMessageCollector(filter, {
+                                            time: 15000
+                                        });
+                                        collector.on('collect', m => {
+                                            status[user.id]["deadline"] = m.content;
+                                            var channel = client.channels.get('518433045330526243');
+                                            message.reply("Your request has been sent to our freelancers");
+                                            
+                                            const embed = new Discord.RichEmbed()
+                                            .setColor(0xdd2e44)
+                                            .setTitle("Comission")
+                                         //   .setFooter("Lookup")
+                                          //  .setThumbnail(`https://ferox.host/assets/images/logo.png`)
+                                            //.setImage('https://ferox.host/assets/images/logo.png')
+                                            .addField(`Client`, message.author, true)
+                                            .addField(`request`, status[user.id]["message"], true)
+                                            .addField(`Budget`, status[user.id]["budget"], true)
+                                            .addField(`Deadline`, status[user.id]["deadline"], true)
+                                            .addField(`ID`, m.channel.name, true)
+                                            .addBlankField()
+                                            .addField(`Status`, "Awaiting claim")
+                                            .setTimestamp();
+                                            channel.send({
+                                                embed: embed
+                                            }).then(function(m){
+                                                m.react("✅");
+                                            });
+
+
+
+
+                                        });
+
+
+
+          
+                                        
+
+                                    });
+
+                                });
+
+                            });
+
+                        });
+
+                    })
+
+
+                    //Do you have a budget? Press on the ‘y’ emoji for yes, and the ‘n’ emoji for no. 
+
+                    //What’s your deadline?
+                    //Your request has been posted, you’ll be mentioned once a freelancer has accepted your commission.
+
+                    .catch(console.error); // Send errors to console
+            });
+
+        }
+    }
+});
+
+
+
+//no
 client.commands = new Discord.Collection();
 fs.readdir("./commands/", (err, files) => {
-    if(err) console.error(err);
+    if (err) console.error(err);
 
     let jsfiles = files.filter(f => f.split(".").pop() === "js");
-    if(jsfiles.length <= 0) {
+    if (jsfiles.length <= 0) {
         console.log("Oops, no commands!");
         return;
     }
 
     console.log(`Loading ${jsfiles.length} command(s)!`);
 
-    jsfiles.forEach((f, i) => {    
+    jsfiles.forEach((f, i) => {
         let props = require(`./commands/${f}`);
         console.log(`${i + 1}: ${f} loaded!`);
-        if(props.command.info != undefined){
-commands.set(props.command.name, props.command.info);
-        }else{
-        commands.set(props.command.name, "-" + props.command.name);
-    }
+        if (props.command.info != undefined) {
+            commands.set(props.command.name, props.command.info);
+        } else {
+            commands.set(props.command.name, "-" + props.command.name);
+        }
         client.commands.set(props.command.name, props);
 
     });
@@ -266,11 +503,11 @@ client.on("message", (message) => {
     if (!message.content.startsWith("-") || message.channel.type == "dm" || message.author.bot) {
         return
     };
-
- //   let cmd = client.commands.get(message.content.slice(1));
- console.log(message.content.slice(1).split(" ").slice(0, 1).join(" "));
+    let args = message.content.trim().split(' ');
+    //   let cmd = client.commands.get(message.content.slice(1));
+    console.log(message.content.slice(1).split(" ").slice(0, 1).join(" "));
     let cmd = client.commands.get(message.content.slice(1).split(" ").slice(0, 1).join(" "));
-    if(cmd) cmd.run(Discord, client, message, commands);
+    if (cmd) cmd.run(Discord, client, message, commands, args);
 
 });
 

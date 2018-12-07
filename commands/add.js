@@ -18,5 +18,6 @@ module.exports.run = async (Discord, client, message, args) => {
 }
 
 module.exports.command = {
-  name:"add"
+  name:"add",
+  info:"Add someone to your ticket"
 }

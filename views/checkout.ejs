@@ -17,9 +17,9 @@ a:nth-child(even) {
 
 
 
-function pay(id, price){
+function pay(){
 document.getElementById('process').classList.add('is-active');
-    fetch("/api/generateinvoice/" + document.getElementById('email').placeholder + '/' + price + '/' + id, 
+    fetch("/api/generateinvoice/" + document.getElementById('email').placeholder + '/' + price + '/', 
          { method: 'post', 
          credentials: "same-origin",
              body: JSON.stringify({
@@ -34,7 +34,7 @@ document.getElementById('process').classList.add('is-active');
   }
          }).then(res => res.json())
     .then(json => {
-
+//redirect to payment on paypal
 window.location.replace(json.links[4].href);
     });
   //  window.location.replace("https://client.ferox.host/admin");
@@ -77,8 +77,8 @@ html{
 <li>Buying: <%= item %></li>
 <li>Price: 5</li>
 </ul>
-<input type="text" placeholder="email"></input>
-<button class="is-secondary">Pay using paypal</button>
+<input type="text" id="email" placeholder="email"></input>
+<button class="is-secondary" onclick="pay()">Pay using paypal</button>
 </article>
 
 </body>

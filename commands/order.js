@@ -38,13 +38,14 @@ module.exports.run = async (Discord, client, message, args) => {
                 .setColor(0xCF40FA)
                 .setTitle("Order")
                 .setFooter("Bot by Wqrld")
+                .setThumbnail(`https://ferox.host/assets/images/logo.png`)
                 .addField(`Type`, `Please react with :red_circle: if you want to use our automated ordering process \n :large_blue_circle: if you want to talk to a real person\nTo pay for a invoice react with :black_circle:`)
                 .setTimestamp();
             c.send({
                 embed: embed
             }).then(question => {
-question.react("🔵"); //human red
-question.react("🔴"); //bot blue
+question.react("🔵"); //human blue
+question.react("🔴"); //bot red
 question.react("⚫"); //invoice black
             
 const human = (reaction, user) => reaction.emoji.name === "🔵" && !user.bot;
@@ -57,9 +58,10 @@ const invoicec = question.createReactionCollector(invoice, { time: 30000 });
 
 humanc.on('collect', async reaction => {
             const embed = new Discord.RichEmbed()
-                .setColor(0x292f33)
+                .setColor(0x55acee)
                 .setTitle("Order")
                 .setFooter("Bot by Wqrld")
+                .setThumbnail(`https://ferox.host/assets/images/logo.png`)
                 .addField(`Hey ${message.author.username}!`, `Please note down any special information about what you need, a Support representative will make a invoice for you.`)
                 .addField(`Item`, `${reason}`)
                 .setTimestamp();
@@ -71,9 +73,10 @@ humanc.on('collect', async reaction => {
 
 invoicec.on('collect', async reaction => {
             const embed = new Discord.RichEmbed()
-                .setColor(0x55acee)
+                .setColor(0x292f33)
                 .setTitle("Invoice")
                 .setFooter("Bot by Wqrld")
+                .setThumbnail(`https://ferox.host/assets/images/logo.png`)
                 .addField(`Sorry, this is work in progress`, `Please note down any special information about what you need, a Support representative will make a invoice for you.`)
                 .addField(`Item`, `${reason}`)
                 .setTimestamp();
@@ -89,6 +92,7 @@ botc.on('collect', async reaction => {
                 .setColor(0xdd2e44)
                 .setTitle("Bot Order")
                 .setFooter("Bot by Wqrld")
+                .setThumbnail(`https://ferox.host/assets/images/logo.png`)
                 .addField(`Sorry, this is work in progress`, `Please note down any special information about what you need, a Support representative will make a invoice for you.`)
                 .addField(`Item`, `${reason}`)
                 .setTimestamp();
@@ -107,5 +111,6 @@ botc.on('collect', async reaction => {
 }
 
 module.exports.command = {
-  name:"order"
+  name:"order",
+  info:"Opens the interactive ordering system"
 }
