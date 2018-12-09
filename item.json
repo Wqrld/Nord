@@ -1,21 +1,21 @@
 {
     
     "merchant_info": {
-        "email": "luc@imluc.ga",
-        "business_name": "Ferox Hosting"
+        "email": "hjason@mail.ccsf.edu",
+        "business_name": "Nord"
     },
     "billing_info": [{
-        "email": "luc@imluc.ga"
+        "email": "hjason@mail.ccsf.edu"
     }],
     "items": [{
-        "name": "Hosting",
+        "name": "Nord",
         "quantity": 1,
         "unit_price": {
             "currency": "EUR",
             "value": 1
         }
     }],
-    "note": "Ferox Hosting is never required to refund you. By ordering you agree to not chargeback.",
+    "note": "Nord is never required to refund you. By ordering you agree to not chargeback.",
     "payment_term": {
         "term_type": "NET_45"
     },

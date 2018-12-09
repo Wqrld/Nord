@@ -2,22 +2,25 @@ var paypal = require('paypal-rest-sdk');
 var item = require('../item.json');
 var config = require('../config.json');
 const fetch = require('node-fetch');
-paypal.configure({
-    'mode': 'live', //sandbox or live
-    'client_id': config.paypal_client,
-    'client_secret': config.paypal_secret
-});
 
 
 module.exports.run = async(Discord, bot, message, args) => {
+    paypal.configure({
+        'mode': 'live', //sandbox or live
+        'client_id': 'ATgcXcentGCrUmypJ4CrIT2PW4pnHApAUmwroJ8v8pwJ8V9akn0P64_KEwXxPBcqQ084xoUXtbJ4bF8w',
+        'client_secret': 'EBUcbV5wsmN-UP4DCtxSDoVTgCPlS1YJssTRlY35aHz3GjiPHtVDyR4fpcPfr6JLX9tLunCT0Uew-7vn'
+    });
+    
+
+    if (!message.channel.name.startsWith(`ticket-`) || !message.member.roles.has('518426205591044097')) {
+        message.channel.send("Only support staff can make invoices.");
+        return;
+    }
     if (message.channel.topic != '' && message.channel.topic != null) {
         message.channel.send("a invoice has already been generated:\nhttps://www.paypal.com/invoice/p#" + message.channel.topic)
         return;
     }
-  /*  if (!message.channel.name.startsWith(`ticket-`)/* || !message.member.roles.has('483728516135911425')) {
-        message.channel.send("Only support staff can make invoices.");
-        return;
-  }*/
+ 
     const email = message.content.split(" ")[1];
     const price = message.content.split(" ").slice(2).join(" ");
 
@@ -27,7 +30,7 @@ module.exports.run = async(Discord, bot, message, args) => {
     }
     message.react('✅');
 
-    item.items[0].name = "Nord"
+    item.items[0].name = "Nord Comission"
     item.billing_info[0].email = parseInt(message.content.split(" ")[1]);
     item.items[0].unit_price.value = message.content.split(" ").slice(2).join(" ");
 

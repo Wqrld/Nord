@@ -111,14 +111,14 @@ app.get('/paypalhook', function (req, res) {
              //   channel.send("Status: **Awaiting order**")
             } else {
               */  
-             
+             console.log(channel.topic);
              if (channel.topic != undefined) {
                 paypal.invoice.get(channel.topic, function(error, invoice) {
                     if(invoice.status == "PAID"){
-                        if(!channel.topic == "Paid"){
+                        if(channel.topic != "Paid"){
                         channel.send("Status: **" + invoice.status + "**")
 
-                        message.channel.setTopic("Paid");
+                        channel.setTopic("Paid");
                         }
                     }
                     
@@ -281,7 +281,17 @@ if(reaction.message.reactions.array().length != 1){return}
 var id = reaction.message.embeds[0].fields[4].value;
 var channel = client.guilds.get('517394741911093268').channels.find(c => c.name == id);
 console.log(id + "\n" + channel)
-channel.send("<@" + user.id + "> Has claimed your comission\nPlease discuss a price and when ready type -invoice (amount)");
+var embed = new Discord.RichEmbed()
+                    .setColor('#36393f')
+                    .addField(`Hey ${message.author.username}!`,
+                    "<@" + user.id + "> Has claimed your comission\nPlease discuss a price and when ready type -invoice (amount)")
+                    .setTimestamp();
+
+                channel.send({
+                        embed: embed
+                    })
+
+
 channel.overwritePermissions(user, {
     SEND_MESSAGES: true,
     READ_MESSAGES: true
@@ -315,10 +325,35 @@ client.on('messageReactionAdd', (reaction, user) => {
                 c.setParent('518411134953586690');
                 createchannel(message, c);
 
-                const embed = new Discord.RichEmbed()
+                var embed = new Discord.RichEmbed()
                     .setColor('#36393f')
                     .addField(`Hey ${message.author.username}!`,
-                        `Please try explain your request in as much detail as possible. Our **Freelancers** will be here soon to help.`)
+                        `Please try explain your request in as much detail as possible. Our **Freelancers** will be here soon to help.\n
+                        Possible services:\n
+-<@&518425577611329546>
+-<@&521064310022340629>
+-<@&521064274617958411>
+-<@&518425578236542976>
+-<@&518425578748248095>
+-<@&521068354434236428>
+-<@&518425576273477632>
+-<@&518425577003417610> (trailer maker)
+-<@&518425580236963850>
+-<@&518425579406753803>
+-<@&521064548761862145>
+
+Please mention one of the above roles in your message.
+
+                        
+
+                        
+                        `)
+
+
+
+
+
+
                     .setTimestamp();
 
 
@@ -340,11 +375,28 @@ ticketchannel = message;
 
 
                             collector.stop();
+if(message.mentions.roles.first == undefined){
+    status[user.id]["role"] = "undefined"
+}else{
+    status[user.id]["role"] = m.mentions.roles.first().name
+}
+m.reply(m.mentions.roles.first().name);
+status[user.id]["message"] = m.content.replace(m.mentions.roles.first(), m.mentions.roles.first().name); 
 
-status[user.id]["message"] = m.content; 
+var channel = client.channels.get('518433045330526243');
+console.log(channel.guild.roles.find('name', status[user.id]["role"]).toString());
 
 
-                            m.reply("Do you have a budget? Press on the ‘n’ emoji for no, specify it if yes.").then(function(m) {
+
+var embed = new Discord.RichEmbed()
+                                           .setColor('#36393f')
+                                           .addField(`Hey ${message.author.username}!`,
+                                           "Do you have a budget? Press on the ‘n’ emoji for no, specify it if yes.")
+                                           .setTimestamp();
+                       
+                                       m.channel.send({
+                                               embed: embed
+                                           }).then(function(m) {
 
 
                                 m.react("🇳");
@@ -368,10 +420,22 @@ status[user.id]["message"] = m.content;
                                         collector.on('collect', m => {
                                             status[user.id]["deadline"] = m.content;
                                             var channel = client.channels.get('518433045330526243');
-                                           m.channel.send("Your request has been sent to our freelancers");
-                                           const embed = new Discord.RichEmbed()
+                                          
+                                           var embed = new Discord.RichEmbed()
+                                           .setColor('#36393f')
+                                           .addField(`Hey ${message.author.username}!`,
+                                           "Your request has been sent to our freelancers")
+                                           .setTimestamp();
+                       
+                                       m.channel.send({
+                                               embed: embed
+                                           })
+
+
+
+                                           var embed = new Discord.RichEmbed()
                                            .setColor(0xdd2e44)
-                                           .setTitle("Comission")
+                                           .setTitle("Commission")
                                            .setFooter("Bot by Wqrld#7373")
                                          //  .setThumbnail(`https://ferox.host/assets/images/logo.png`)
                                            //.setImage('https://ferox.host/assets/images/logo.png')
@@ -379,6 +443,7 @@ status[user.id]["message"] = m.content;
                                            .addField(`request`, status[user.id]["message"], true)
                                            .addField(`Budget`, status[user.id]["budget"], true)
                                            .addField(`Deadline`, status[user.id]["deadline"], true)
+                                           .addField(`Role`, channel.guild.roles.find('name', status[user.id]["role"]).toString(), true)
                                            .addField(`ID`, m.channel.name, true)
                                            .addBlankField()
                                            .addField(`Status`, "Awaiting claim")
@@ -386,6 +451,7 @@ status[user.id]["message"] = m.content;
                                        channel.send({
                                            embed: embed
                                        }).then(function(m){
+                                           channel.send(channel.guild.roles.find('name', status[user.id]["role"]).toString())
                                            m.react("✅");
                                        });
 
@@ -404,7 +470,16 @@ status[user.id]["message"] = m.content;
                                     //got budget
                                     status[user.id]["budget"] = m.content; 
                                     
-                                    m.reply("What’s your deadline?, if none say \"no\"").then(function(m) {
+
+                                    var embed = new Discord.RichEmbed()
+                                    .setColor('#36393f')
+                                    .addField(`Hey ${m.author.username}!`,
+                                    "What’s your deadline?, if none say \"no\"")
+                                    .setTimestamp();
+                
+                                m.channel.send({
+                                        embed: embed
+                                    }).then(function(m) {
                                         //got deadline
                                         const filter = m => m.author == user;
                                         const collector = message.channel.createMessageCollector(filter, {
@@ -413,11 +488,26 @@ status[user.id]["message"] = m.content;
                                         collector.on('collect', m => {
                                             status[user.id]["deadline"] = m.content;
                                             var channel = client.channels.get('518433045330526243');
-                                            message.reply("Your request has been sent to our freelancers");
+
+
+                                            var embed = new Discord.RichEmbed()
+                                            .setColor('#36393f')
+                                            .addField(`Hey ${m.author.username}!`,
+                                            "Your request has been sent to our freelancers")
+                                            .setTimestamp();
+                        
+                                        message.channel.send({
+                                                embed: embed
+                                            })
+
                                             
-                                            const embed = new Discord.RichEmbed()
+                                            
+
+
+
+                                            var embed = new Discord.RichEmbed()
                                             .setColor(0xdd2e44)
-                                            .setTitle("Comission")
+                                            .setTitle("Commission")
                                          //   .setFooter("Lookup")
                                           //  .setThumbnail(`https://ferox.host/assets/images/logo.png`)
                                             //.setImage('https://ferox.host/assets/images/logo.png')
@@ -425,6 +515,7 @@ status[user.id]["message"] = m.content;
                                             .addField(`request`, status[user.id]["message"], true)
                                             .addField(`Budget`, status[user.id]["budget"], true)
                                             .addField(`Deadline`, status[user.id]["deadline"], true)
+                                            .addField(`Role`, channel.guild.roles.find('name', status[user.id]["role"]).toString(), true)
                                             .addField(`ID`, m.channel.name, true)
                                             .addBlankField()
                                             .addField(`Status`, "Awaiting claim")
@@ -432,6 +523,7 @@ status[user.id]["message"] = m.content;
                                             channel.send({
                                                 embed: embed
                                             }).then(function(m){
+                                                channel.send(channel.guild.roles.find('name', status[user.id]["role"]).toString())
                                                 m.react("✅");
                                             });
 

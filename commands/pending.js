@@ -1,9 +1,41 @@
 
 module.exports.run = async (Discord, client, message, args) => {
 
- 
+ if(message.channel.topic != undefined){
             message.channel.setParent('518411452470525963');
-            message.channel.send("Thanks for your payment, our freelancer will get started now");
+           
+
+            const embed = new Discord.RichEmbed()
+            .setColor('#36393f')
+            .addField(`Hey ${message.author.username}!`,
+                `Thanks for your payment, our freelancer will get started now`)
+            .setTimestamp();
+          
+          
+          
+            
+          message.channel.send({
+                embed: embed
+            })
+
+
+
+
+ }else{
+ 
+  const embed = new Discord.RichEmbed()
+  .setColor('#36393f')
+  .addField(`Hey ${message.author.username}!`,
+      `Please pay first using -invoice`)
+  .setTimestamp();
+
+
+
+  
+message.channel.send({
+      embed: embed
+  })
+ }
 
 }
 

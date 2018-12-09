@@ -16,7 +16,7 @@ var options = {
 
 module.exports.run = async (Discord, client, message, args) => {
 
-  if (!message.channel.name.startsWith(`ticket-`) && !message.channel.name.startsWith(`order-`)) return message.channel.send(`You can't use the close command outside of a ticket channel.`);
+  if (!message.channel.name.startsWith(`ticket-`) && !message.channel.name.startsWith(`complete-`)) return message.channel.send(`You can't use the close command outside of a ticket channel.`);
         // Confirm delete - with timeout (Not command)
 
 const embed = new Discord.RichEmbed()
