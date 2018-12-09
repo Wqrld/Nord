@@ -1,6 +1,7 @@
 var paypal = require('paypal-rest-sdk');
 var item = require('../item.json');
 var config = require('../config.json');
+
 const fetch = require('node-fetch');
 paypal.configure({
     'mode': 'live', //sandbox or live
@@ -37,7 +38,7 @@ const confirmc = m.createReactionCollector(confirm, { time: 30000 });
 
 
 confirmc.on('collect', async reaction => {
-if(message.channel.name.startsWith(`order-`) && message.channel.topic != undefined){
+if(message.channel.name.startsWith(`ticket-`) && message.channel.topic != undefined){
 
 
 paypal.invoice.get(message.channel.topic, function(error, invoice) {
@@ -57,10 +58,30 @@ paypal.invoice.del(message.channel.topic, function (error, rv) {});
 }
 
 
-m.channel.delete();
+
+await message.channel.fetchMessages({
+    limit: 100
+  }).then(function (messages){
+
+
+
+fetch('https://hastebin.com/documents', { method: 'POST', body: messages.array().reverse().join("\n") })
+    .then(res => res.json()) // expecting a json response
+    .then(json => {
+        
+//json.key
+var channel = client.channels.get('521262479779692584');
+channel.send("Transscript for " + message.channel.name + ": \nhttps://hastebin.com/" + json.key);
+
+
+
+        m.channel.delete();
+    });
+
+
 });
 
-
+})
     
     
 
