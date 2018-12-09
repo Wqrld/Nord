@@ -39,12 +39,14 @@ var commands = new Map();
 const prefix = "-";
 
 client.on("guildMemberUpdate", function(old, newmember) {
-if(old.guild.name != "Nord"){return}
-    if(old.roles.find('name', 'Freelancer') == undefined){
-        if(newmember.roles.find('name', 'Freelancer') != undefined){
-//new freelancer
+    if (old.guild.name != "Nord") {
+        return
+    }
+    if (old.roles.find('name', 'Freelancer') == undefined) {
+        if (newmember.roles.find('name', 'Freelancer') != undefined) {
+            //new freelancer
 
-newmember.send("welcome to NORD\nPlease specify your paypal email address by typing `-paypal (mail)` in one of our channels.")
+            newmember.send("welcome to NORD\nPlease specify your paypal email address by typing `-paypal (mail)` in one of our channels.")
 
         }
     }
@@ -236,7 +238,7 @@ client.on('messageReactionAdd', (reaction, user) => {
 function requestdeadline(user, m) {
 
 
-    
+
     m.channel.send({
         embed: createembed("cake", "What’s your deadline?, if none say \"no\"")
     }).then(function(m) {
@@ -258,15 +260,15 @@ function requestdeadline(user, m) {
             m.channel.send({
                 embed: embed
             })
-var role;
-var channel = client.channels.get('518433045330526243');
+            var role;
+            var channel = client.channels.get('518433045330526243');
 
-console.log(status[user.id]["role"]);
-if(channel.guild.roles.find('name', status[user.id]["role"]) != undefined){
-role = channel.guild.roles.find('name', status[user.id]["role"]).toString()
-}else{
-    role = "undefined"
-}
+            console.log(status[user.id]["role"]);
+            if (channel.guild.roles.find('name', status[user.id]["role"]) != undefined) {
+                role = channel.guild.roles.find('name', status[user.id]["role"]).toString()
+            } else {
+                role = "undefined"
+            }
 
             var embed = new Discord.RichEmbed()
                 .setColor(0xdd2e44)
@@ -280,8 +282,8 @@ role = channel.guild.roles.find('name', status[user.id]["role"]).toString()
                 .addField(`Deadline`, status[user.id]["deadline"], true)
                 .addField(`Role`, role, true)
                 .addField(`ID`, m.channel.name, true)
-            //    .addBlankField()
-           //     .addField(`Status`, "Awaiting claim")
+                //    .addBlankField()
+                //     .addField(`Status`, "Awaiting claim")
                 .setTimestamp();
             channel.send({
                 embed: embed
@@ -367,7 +369,7 @@ client.on('messageReactionAdd', (reaction, user) => {
     message.guild.createChannel(`ticket-${shorten(message.author.id)}`, "text").then(c => {
         c.setParent('518411134953586690');
         createchannel(reaction.message, c);
-        c.send("<@" + reaction.message.author.id + ">").then(function (messy) {
+        c.send("<@" + reaction.message.author.id + ">").then(function(messy) {
             messy.delete();
         })
         welcomemsg(reaction.message.author.username, c, function(message) {
@@ -404,42 +406,42 @@ client.on('messageReactionAdd', (reaction, user) => {
                 collector.on('collect', m => {
                     collector.stop();
 
-                //replace tag with name
+                    //replace tag with name
 
-                status[user.id]["message"] = m.content
+                    status[user.id]["message"] = m.content
 
-                var channel = client.channels.get('518433045330526243');
+                    var channel = client.channels.get('518433045330526243');
 
-                //ask for budget
-                m.channel.send({
-                    embed: createembed(message.author.username, "Do you have a budget? Press on the ‘n’ emoji for no, specify it if yes.")
-                }).then(function(m) {
-                    m.react("🇳");
+                    //ask for budget
+                    m.channel.send({
+                        embed: createembed(message.author.username, "Do you have a budget? Press on the ‘n’ emoji for no, specify it if yes.")
+                    }).then(function(m) {
+                        m.react("🇳");
 
-                    const nofilter = (reaction, user) => reaction.emoji.name === "🇳" && !user.bot;
-                    const reactioncollector = m.createReactionCollector(nofilter, {
-                        time: 30000
+                        const nofilter = (reaction, user) => reaction.emoji.name === "🇳" && !user.bot;
+                        const reactioncollector = m.createReactionCollector(nofilter, {
+                            time: 30000
+                        });
+                        const filter = m => m.author == user;
+                        const collector = message.channel.createMessageCollector(filter, {
+                            time: 30000
+                        });
+
+                        reactioncollector.on('collect', reaction => {
+                            reactioncollector.stop();
+                            status[user.id]["budget"] = "quote";
+                            requestdeadline(user, reaction.message)
+                        });
+                        collector.on('collect', m => {
+                            collector.stop();
+                            status[user.id]["budget"] = m.content;
+                            requestdeadline(user, m);
+                        });
+
                     });
-                    const filter = m => m.author == user;
-                    const collector = message.channel.createMessageCollector(filter, {
-                        time: 30000
-                    });
-
-                    reactioncollector.on('collect', reaction => {
-                        reactioncollector.stop();
-                        status[user.id]["budget"] = "quote";
-                        requestdeadline(user, reaction.message)
-                    });
-                    collector.on('collect', m => {
-                        collector.stop();
-                        status[user.id]["budget"] = m.content;
-                        requestdeadline(user, m);
-                    });
-
                 });
-            });
-        })
-    });
+            })
+        });
 
     });
 });
