@@ -17,76 +17,99 @@ var options = {
 
 module.exports.run = async (Discord, client, message, args) => {
 
-  if (!message.channel.name.startsWith(`ticket-`) && !message.channel.name.startsWith(`complete-`)) return message.channel.send(`You can't use the close command outside of a ticket channel.`);
-        // Confirm delete - with timeout (Not command)
+    if (!message.channel.name.startsWith(`ticket-`) && !message.channel.name.startsWith(`complete-`)) return message.channel.send(`You can't use the close command outside of a ticket channel.`);
+    // Confirm delete - with timeout (Not command)
 
-const embed = new Discord.RichEmbed()
-                .setColor(0x55acee)
-                .setTitle("Close")
-                .setFooter("Bot by Wqrld")
-                .addField(`Are you sure?`, `Are you sure? Once confirmed, you cannot reverse this action!\nTo confirm, react with ✅.`)
-                .setTimestamp();
-            message.channel.send({
-                embed: embed
-            })
-            .then((m) => {
+    const embed = new Discord.RichEmbed()
+        .setColor(0x55acee)
+        .setTitle("Close")
+        .setFooter("Bot by Wqrld")
+        .addField(`Are you sure?`, `Are you sure? Once confirmed, you cannot reverse this action!\nTo confirm, react with ✅.`)
+        .setTimestamp();
+    message.channel.send({
+            embed: embed
+        })
+        .then((m) => {
 
-m.react("✅")
+            m.react("✅")
 
-const confirm = (reaction, user) => reaction.emoji.name === "✅" && !user.bot;
-const confirmc = m.createReactionCollector(confirm, { time: 30000 });
-
-
-confirmc.on('collect', async reaction => {
-if(message.channel.name.startsWith(`ticket-`) && message.channel.topic != undefined){
+            const confirm = (reaction, user) => reaction.emoji.name === "✅" && !user.bot;
+            const confirmc = m.createReactionCollector(confirm, {
+                time: 30000
+            });
 
 
-paypal.invoice.get(message.channel.topic, function(error, invoice) {
-    if(invoice.status == 'SENT'){
-    paypal.invoice.cancel(message.channel.topic, options, function (error, rv) {
+            confirmc.on('collect', async reaction => {
+                
+                if (message.channel.name.startsWith(`ticket-`) && message.channel.topic != undefined) {
 
-paypal.invoice.del(message.channel.topic, function (error, rv) {});
+                    if (message.channel.topic.indexOf("Paid") === -1) {
+                        paypal.invoice.get(message.channel.topic, function(error, invoice) {
+                            if (invoice.status == 'SENT') {
+                                paypal.invoice.cancel(message.channel.topic, options, function(error, rv) {
 
-});
+                                    paypal.invoice.del(message.channel.topic, function(error, rv) {});
 
+                                });
+
+                            }
+
+                        });
+                    }
+                    
+
+                }
+
+                    await message.channel.fetchMessages({
+                        limit: 100
+                    }).then(function(messages) {
+
+                       console.log(reaction);
+
+                        fetch('https://hastebin.com/documents', {
+                                method: 'POST',
+                                body: messages.array().reverse().join("\n"),
+                                timeout: 3000
+                            })
+                            .then(res => res.json()) // expecting a json response
+                            .then(json => {
+
+                                
+                                console.log(reaction);
+                                //json.key
+                                var channel = client.channels.get('521262479779692584');
+                                
+                                   
+                                
+                                channel.send("Transscript for " + message.channel.name + ": \nhttps://hastebin.com/" + json.key);
+                                
+
+
+                                m.channel.delete();
+                            }).catch(err => {
+                                var channel = client.channels.get('521262479779692584');
+                            channel.send("Transscript for " + message.channel.name + ": Hastebin error, is it down?");
+                            m.channel.delete();
+                            });
+
+                        
+                   
+
+
+                            
+
+
+                    });
+
+
+
+                
+
+            });
+        });
 }
-
-});
-
-
-
-}
-
-
-
-await message.channel.fetchMessages({
-    limit: 100
-  }).then(function (messages){
-
-
-
-fetch('https://hastebin.com/documents', { method: 'POST', body: messages.array().reverse().join("\n") })
-    .then(res => res.json()) // expecting a json response
-    .then(json => {
         
-//json.key
-var channel = client.channels.get('521262479779692584');
-channel.send("Transscript for " + message.channel.name + ": \nhttps://hastebin.com/" + json.key);
 
-
-
-        m.channel.delete();
-    });
-
-
-});
-
-})
-    
-    
-
-});
-};
 module.exports.command = {
-  name:"close"
+    name: "close"
 }

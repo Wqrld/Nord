@@ -2,7 +2,8 @@ var paypal = require('paypal-rest-sdk');
 var item = require('../item.json');
 var config = require('../config.json');
 const fetch = require('node-fetch');
-
+var redis = require("redis"),
+    red = redis.createClient();
 
 module.exports.run = async(Discord, bot, message, args) => {
     paypal.configure({
@@ -50,14 +51,15 @@ module.exports.run = async(Discord, bot, message, args) => {
         let embed = new Discord.RichEmbed()
             .setColor("#7289DA")
             .setTitle("Nord | Invoice")
-            .addField(`We have created an invoice with the following amount: **_€${price},-_**\nPlease pay here:`, `**<${invoice.links[4].href}>**`)
-            .addField(`Please read our terms of service:`, "-\n\nBy paying you automatically agree to our TOS")
+            .addField(`We have created an invoice with the following amount: **_€${price},-_**\nPlease pay here:`, `https://www.paypal.com/invoice/payerView/details/${invoice.id}`)
+          //  .addField(`Please read our terms of service:`, "-\n\nBy paying you automatically agree to our TOS")
             .setThumbnail(`https://chart.googleapis.com/chart?cht=qr&chs=500x500&chl=${encoded}`)
+            .setFooter("-status to check payment")
             .setTimestamp();
         message.channel.send({
             embed: embed
         });
-
+        red.set("price" + message.channel.name, message.content.split(" ").slice(2).join(" "));
 
     })
         //https://github.com/paypal/PayPal-node-SDK/tree/master/samples/invoice

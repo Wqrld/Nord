@@ -15,7 +15,7 @@ module.exports.run = async (Discord, client, message, args) => {
         } else {
             paypal.invoice.get(message.channel.topic, function(error, invoice) {
                 message.react('✅');
-                message.channel.send("Status: `" + invoice.status + "`")
+            //    message.channel.send("Status: `" + invoice.status + "`")
 
 
 
@@ -23,9 +23,9 @@ module.exports.run = async (Discord, client, message, args) => {
                 .setColor(0xdd2e44)
                 .setTitle("Invoice status")
                 .setFooter("Invoice status")
-                .setThumbnail(`https://ferox.host/assets/images/logo.png`)
+               // .setThumbnail(`https://ferox.host/assets/images/logo.png`)
                 //.setImage('https://ferox.host/assets/images/logo.png')
-                .addField(`Status`, invoice.status,)
+                .addField(`Status`, invoice.status)
                 .setTimestamp();
             message.channel.send({
                 embed: embed

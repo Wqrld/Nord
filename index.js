@@ -2,15 +2,8 @@
 
 // Import the discord.js module
 const Discord = require("discord.js");
-var CronJob = require('cron').CronJob;
-var moment = require('moment');
 var redis = require("redis"),
     red = redis.createClient();
-const ipRegex = require('ip-regex');
-var sub = redis.createClient(),
-    pub = redis.createClient();
-var util = require('util')
-const axios = require('axios');
 
 var express = require('express')
 var app = express()
@@ -20,11 +13,8 @@ Array.prototype.random = function() {
 }
 // Create an instance of a Discord client
 const client = new Discord.Client();
-const sqlite3 = require('sqlite3').verbose();
-let db = new sqlite3.Database('./db.db');
 var paypal = require('paypal-rest-sdk');
 const fs = require("fs");
-var item = require('./item.json');
 var config = require('./config.json');
 paypal.configure({
     'mode': 'live', //sandbox or live
@@ -33,86 +23,42 @@ paypal.configure({
 });
 var commands = new Map();
 
-
+var utils = require("./lib/utils.js");
 
 
 const prefix = "-";
 
-client.on("guildMemberUpdate", function(old, newmember) {
-    if (old.guild.name != "Nord") {
-        return
-    }
-    if (old.roles.find('name', 'Freelancer') == undefined) {
-        if (newmember.roles.find('name', 'Freelancer') != undefined) {
-            //new freelancer
+// client.on("guildMemberUpdate", function(old, newmember) {
+//     if (old.guild.name != "Nord") {
+//         return
+//     }
+//     if (old.roles.find('name', 'Freelancer') == undefined) {
+//         if (newmember.roles.find('name', 'Freelancer') != undefined) {
+//             //new freelancer
 
-            newmember.send("welcome to NORD\nPlease specify your paypal email address by typing `-paypal (mail)` in one of our channels.")
+//             newmember.send("welcome to NORD\nPlease specify your paypal email address by typing `-paypal (mail)` in one of our channels.")
 
-        }
-    }
+//         }
+//     }
 
 
 
-})
+// })
 
 // Startup console message
 client.on("ready", () => {
-    client.user.setActivity("NORD");
+    client.user.setActivity("Nord", { type: 'STREAMING', url: "https://www.twitch.tv/monstercat" });
     console.log(`Bot has started, with ${client.users.size} users, in ${client.channels.size} channels of nord (vpn)`);
 
 
 });
 
-
-app.get('/paypalhook', function(req, res) {
-    res.send('hello world')
-    var orders = client.channels.get('518411452470525963');
-    var children = orders.children.array();
-
-    children.forEach(function(channel, i) {
-
-        /*      if (channel.topic == undefined) {
-           //   channel.send("Status: **Awaiting order**")
-          } else {
-            */
-        console.log(channel.topic);
-        if (channel.topic != undefined) {
-            paypal.invoice.get(channel.topic, function(error, invoice) {
-                if (invoice.status == "PAID") {
-                    if (channel.topic != "Paid") {
-                        channel.send("Status: **" + invoice.status + "**")
-
-                        channel.setTopic("Paid");
-                    }
-                }
-
-
-            });
-        }
-
-
-
-    });
-});
+require("./modules/paypalhook.js")(app, client);
+require("./modules/quickrespond.js")(client);
+require("./modules/joinmessage.js")(client);
 
 
 app.listen(1337);
-
-client.on('guildMemberAdd', member => {
-    welcomemsgs = [
-        `Welcome to the server, ${member}`,
-        `Welcome to the club, ${member}`,
-        `Enjoy your stay, ${member}`,
-        `Thanks for joining our server, ${member}`
-    ]
-
-    // Send the message to a designated channel on a server:
-    const channel = member.guild.channels.find('name', 'general');
-    // Do nothing if the channel wasn't found on this server
-    if (!channel) return;
-    // Send the message, mentioning the member
-    channel.send(welcomemsgs.random());
-});
 
 const events = {
     MESSAGE_REACTION_ADD: 'messageReactionAdd',
@@ -138,56 +84,12 @@ client.on('raw', async event => {
     client.emit(events[event.t], reaction, user);
 });
 
-
-// Quick reply messages 2-9 27 28
-const responseObject = {
-    "-links": "soon",
-    "-discord": "soon",
-    "Quick Response 4": ""
-};
-
-// Just saying what to do with the objects above
-
-client.on("message", (message) => {
-    if (responseObject[message.content]) {
-        message.delete()
-        //   message.channel.send(responseObject[message.content]);
-        console.log(responseObject[message.content]);
-        const embed = new Discord.RichEmbed()
-            .setColor(0xCF40FA)
-            .setFooter("Bot by Wqrld")
-            .addField(message.content, responseObject[message.content])
-        message.channel.send({
-            embed: embed
-        });
-
-
-
-    }
-});
-
 function shorten(text) {
 
     return text.substring(0, 4);
 }
 
-function createchannel(message, c) {
-    let role = message.guild.roles.find("name", "*");
-    let role2 = message.guild.roles.find("name", "@everyone");
-    c.overwritePermissions(role, {
-        SEND_MESSAGES: true,
-        READ_MESSAGES: true
-    });
-    c.overwritePermissions(role2, {
-        SEND_MESSAGES: false,
-        READ_MESSAGES: false
-    });
-    c.overwritePermissions(message.author, {
-        SEND_MESSAGES: true,
-        READ_MESSAGES: true
-    });
 
-}
 
 const status = {
     "Wqrld": {
@@ -200,28 +102,27 @@ client.on('messageReactionAdd', (reaction, user) => {
 
     if (reaction.message.channel != reaction.message.guild.channels.find(c => c.name == "commissions")) return;
     if (!user.bot && reaction.emoji.name === "✅") {
-        //console.log("reaction!" + reaction.message.reactions.array().length);
+    
         if (reaction.message.reactions.array().length != 1) {
             return
         }
 
-
-        //console.log(reaction.message.embeds[0].fields);
-
-
         var id = reaction.message.embeds[0].fields[5].value;
         var channel = client.guilds.get('517394741911093268').channels.find(c => c.name == id);
         console.log(id + "\n" + channel)
+        red.set("freelancer" + reaction.message.channel.name, user.id, redis.print);
         var embed = new Discord.RichEmbed()
             .setColor('#36393f')
             .addField(`Commission claimed`,
-                "<@" + user.id + "> Has claimed your comission\nPlease discuss a price and when ready type -invoice (amount)")
+                "<@" + user.id + "> Has claimed your comission\nPlease discuss a price and when ready type -invoice (email) (amount)")
             .setTimestamp();
         channel.send({
             embed: embed
         })
-        red.set("freelancer." + channel.name, user.id, redis.print);
-
+        red.set("freelancer" + channel.name, user.id, redis.print);
+channel.send("<@" + user.id + ">").then((m) => {
+    m.delete();
+})
         channel.overwritePermissions(user, {
             SEND_MESSAGES: true,
             READ_MESSAGES: true
@@ -240,7 +141,7 @@ function requestdeadline(user, m) {
 
 
     m.channel.send({
-        embed: createembed("cake", "What’s your deadline?, if none say \"no\"")
+        embed: utils.createembed("cake", "What’s your deadline?, if none say \"no\"")
     }).then(function(m) {
         //got deadline
         const filter = m => m.author == user;
@@ -249,6 +150,7 @@ function requestdeadline(user, m) {
         });
         collector.on('collect', m => {
             status[user.id]["deadline"] = m.content;
+            red.set("deadline" + m.channel.name, m.content, redis.print);
             collector.stop()
 
             var embed = new Discord.RichEmbed()
@@ -315,7 +217,7 @@ function welcomemsg(username, c, callback) {
 -<@&518425579406753803>
 -<@&521064548761862145>
 
-Please mention one of the above roles in your message.
+Please mention one of the above roles
 
         
 
@@ -328,17 +230,6 @@ Please mention one of the above roles in your message.
     }).then(function(message) {
         callback(message);
     })
-}
-
-function createembed(username, message) {
-    var embed = new Discord.RichEmbed()
-        .setColor('#36393f')
-        .addField(`Hey!`,
-            message)
-        .setTimestamp();
-
-
-    return embed
 }
 
 
@@ -368,10 +259,13 @@ client.on('messageReactionAdd', (reaction, user) => {
 
     message.guild.createChannel(`ticket-${shorten(message.author.id)}`, "text").then(c => {
         c.setParent('518411134953586690');
-        createchannel(reaction.message, c);
+        
+        utils.createchannel(reaction.message, c);
         c.send("<@" + reaction.message.author.id + ">").then(function(messy) {
             messy.delete();
+            
         })
+        red.set("client" + c.name, reaction.message.author.id, redis.print);
         welcomemsg(reaction.message.author.username, c, function(message) {
             ticketchannel = message;
 
@@ -384,18 +278,23 @@ client.on('messageReactionAdd', (reaction, user) => {
 
                 //check if role is mentioned
                 rolecollector.stop();
-                if (message.mentions.roles.first == undefined) {
-                    status[user.id]["role"] = "undefined"
+                console.log(m.mentions.roles);
+                if (m.mentions.roles.first() == undefined) {
+                    status[user.id]["role"] = "not specified"
+                    console.log("nonspecified")
+                    red.set("role" + m.channel.name, "not specified", redis.print);
                 } else {
+                    console.log(m.mentions.roles.first().name)
                     status[user.id]["role"] = m.mentions.roles.first().name
+                    red.set("role" + m.channel.name, m.mentions.roles.first().name, redis.print);
                 }
-
+                
 
                 //reply with mentioned role
 
 
                 m.channel.send({
-                    embed: createembed(message.author.username, "A " + m.mentions.roles.first().name + " Will be requested for this commission\n please specify your needs now.")
+                    embed: utils.createembed(message.author.username, "A " + m.mentions.roles.first().name + " Will be requested for this commission\n please specify your needs now.")
                 })
 
 
@@ -409,12 +308,13 @@ client.on('messageReactionAdd', (reaction, user) => {
                     //replace tag with name
 
                     status[user.id]["message"] = m.content
+                    red.set("message" + m.channel.name, m.content, redis.print);
 
                     var channel = client.channels.get('518433045330526243');
 
                     //ask for budget
                     m.channel.send({
-                        embed: createembed(message.author.username, "Do you have a budget? Press on the ‘n’ emoji for no, specify it if yes.")
+                        embed: utils.createembed(message.author.username, "Do you have a budget? Press on the ‘n’ emoji for no, specify it if yes.")
                     }).then(function(m) {
                         m.react("🇳");
 
@@ -430,11 +330,13 @@ client.on('messageReactionAdd', (reaction, user) => {
                         reactioncollector.on('collect', reaction => {
                             reactioncollector.stop();
                             status[user.id]["budget"] = "quote";
+                            red.set("budget" + m.channel.name, "quote", redis.print);
                             requestdeadline(user, reaction.message)
                         });
                         collector.on('collect', m => {
                             collector.stop();
                             status[user.id]["budget"] = m.content;
+                            red.set("budget" + m.channel.name, m.content, redis.print);
                             requestdeadline(user, m);
                         });
 
@@ -491,5 +393,5 @@ client.on("message", (message) => {
 });
 
 
-// Bot token 
+// Logs in using the bots token.
 client.login(config.bot_token);
