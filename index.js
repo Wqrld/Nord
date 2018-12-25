@@ -28,29 +28,9 @@ var utils = require("./lib/utils.js");
 
 const prefix = "-";
 
-// client.on("guildMemberUpdate", function(old, newmember) {
-//     if (old.guild.name != "Nord") {
-//         return
-//     }
-//     if (old.roles.find('name', 'Freelancer') == undefined) {
-//         if (newmember.roles.find('name', 'Freelancer') != undefined) {
-//             //new freelancer
-
-//             newmember.send("welcome to NORD\nPlease specify your paypal email address by typing `-paypal (mail)` in one of our channels.")
-
-//         }
-//     }
-
-
-
-// })
-
-// Startup console message
 client.on("ready", () => {
-    client.user.setActivity("Nord", { type: 'STREAMING', url: "https://www.twitch.tv/monstercat" });
-    console.log(`Bot has started, with ${client.users.size} users, in ${client.channels.size} channels of nord (vpn)`);
-
-
+    client.user.setActivity(config.name, { type: 'STREAMING', url: "https://www.twitch.tv/monstercat" });
+    console.log(`Bot has started, with ${client.users.size} users, in ${client.channels.size} channels of ` + config.name);
 });
 
 require("./modules/paypalhook.js")(app, client);
@@ -83,11 +63,6 @@ client.on('raw', async event => {
 
     client.emit(events[event.t], reaction, user);
 });
-
-function shorten(text) {
-
-    return text.substring(0, 4);
-}
 
 
 
@@ -242,22 +217,17 @@ client.on('messageReactionAdd', (reaction, user) => {
     if (reaction.message.channel != reaction.message.guild.channels.find(c => c.name == "ticket-creation")) {
         return
     };
-    if (reaction.emoji.name !== "🎟") {
-        return
-    }
-
-
-    if (user.bot) {
+    if (reaction.emoji.name !== "🎟" || user.bot) {
         return
     }
     reaction.remove(user);
 
-    if (message.guild.channels.exists("name", "ticket-" + shorten(message.author.id))) {
+    if (message.guild.channels.exists("name", "ticket-" + utils.shorten(message.author.id))) {
         return
     }
 
 
-    message.guild.createChannel(`ticket-${shorten(message.author.id)}`, "text").then(c => {
+    message.guild.createChannel(`ticket-${utils.shorten(message.author.id)}`, "text").then(c => {
         c.setParent('518411134953586690');
         
         utils.createchannel(reaction.message, c);
