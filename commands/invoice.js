@@ -13,7 +13,7 @@ module.exports.run = async(Discord, bot, message, args) => {
     });
     
 
-    if (!message.channel.name.startsWith(`ticket-`) || !message.member.roles.has('518426205591044097')) {
+    if (!message.channel.name.startsWith(`ticket-`) || (!message.member.roles.has('518425575136952330') && !message.member.roles.has('518425575661240320'))) {
         message.channel.send("Only support staff can make invoices.");
         return;
     }
@@ -34,9 +34,9 @@ module.exports.run = async(Discord, bot, message, args) => {
     item.items[0].name = "Nord Comission"
     item.billing_info[0].email = parseInt(message.content.split(" ")[1]);
     item.items[0].unit_price.value = message.content.split(" ").slice(2).join(" ");
-
     paypal.invoice.create(item, function(error, invoice) {
         console.log(JSON.stringify(error));
+        console.log(invoice)
         paypal.invoice.send(invoice.id, function(error, rv) {
             message.channel.setTopic(invoice.id);
            
@@ -45,7 +45,7 @@ module.exports.run = async(Discord, bot, message, args) => {
 
 
 
-        console.log(invoice)
+        console.log(error)
        
         var encoded = invoice.links[4].href.replace('#', '%23')
         let embed = new Discord.RichEmbed()

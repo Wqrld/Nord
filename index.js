@@ -7,10 +7,6 @@ var redis = require("redis"),
 
 var express = require('express')
 var app = express()
-
-Array.prototype.random = function() {
-    return this[Math.floor((Math.random() * this.length))];
-}
 // Create an instance of a Discord client
 const client = new Discord.Client();
 var paypal = require('paypal-rest-sdk');
@@ -21,116 +17,69 @@ paypal.configure({
     'client_id': config.paypal_client,
     'client_secret': config.paypal_secret
 });
+
+
 var commands = new Map();
+Array.prototype.random = function() {
+    return this[Math.floor((Math.random() * this.length))];
+}
 
-var utils = require("./lib/utils.js");
-
-
-const prefix = "-";
 
 client.on("ready", () => {
     client.user.setActivity(config.name, { type: 'STREAMING', url: "https://www.twitch.tv/monstercat" });
     console.log(`Bot has started, with ${client.users.size} users, in ${client.channels.size} channels of ` + config.name);
 });
+var utils = require("./lib/utils.js");
 
 require("./modules/paypalhook.js")(app, client);
 require("./modules/quickrespond.js")(client);
-require("./modules/joinmessage.js")(client);
-
-
+require("./modules/newsalesrep.js")(client);
+//require("./modules/joinmessage.js")(client);
+require("./modules/commandloader.js")(client, commands);
+require("./modules/reactionclaim.js")(client);
+require("./modules/welcomer.js")(client);
 app.listen(1337);
 
-const events = {
-    MESSAGE_REACTION_ADD: 'messageReactionAdd',
-    MESSAGE_REACTION_REMOVE: 'messageReactionRemove',
-};
-
-
-client.on('raw', async event => {
-    if (!events.hasOwnProperty(event.t)) return;
-
-    const {
-        d: data
-    } = event;
-    const user = client.users.get(data.user_id);
-    const channel = client.channels.get(data.channel_id) || await user.createDM();
-
-    if (channel.messages.has(data.message_id)) return;
-
-    const message = await channel.fetchMessage(data.message_id);
-    const emojiKey = (data.emoji.id) ? `${data.emoji.name}:${data.emoji.id}` : data.emoji.name;
-    const reaction = message.reactions.get(emojiKey);
-
-    client.emit(events[event.t], reaction, user);
-});
-
-
-
-const status = {
+var status = {
     "Wqrld": {
         "message": "",
         "budget": ""
 
-    },
-};
-client.on('messageReactionAdd', (reaction, user) => {
-
-    if (reaction.message.channel != reaction.message.guild.channels.find(c => c.name == "commissions")) return;
-    if (!user.bot && reaction.emoji.name === "✅") {
-    
-        if (reaction.message.reactions.array().length != 1) {
-            return
-        }
-
-        var id = reaction.message.embeds[0].fields[5].value;
-        var channel = client.guilds.get('517394741911093268').channels.find(c => c.name == id);
-        console.log(id + "\n" + channel)
-        red.set("freelancer" + reaction.message.channel.name, user.id, redis.print);
-        var embed = new Discord.RichEmbed()
-            .setColor('#36393f')
-            .addField(`Commission claimed`,
-                "<@" + user.id + "> Has claimed your comission\nPlease discuss a price and when ready type -invoice (email) (amount)")
-            .setTimestamp();
-        channel.send({
-            embed: embed
-        })
-        red.set("freelancer" + channel.name, user.id, redis.print);
-channel.send("<@" + user.id + ">").then((m) => {
-    m.delete();
-})
-        channel.overwritePermissions(user, {
-            SEND_MESSAGES: true,
-            READ_MESSAGES: true
-        });
-
-
     }
-
-
-});
-
+};
 
 
 function requestdeadline(user, m) {
+    console.log("requestdeadline")
+    var embed = new Discord.RichEmbed()
+    .setColor('#36393f')
+    .addField(`Hey!`,
+    "What’s your deadline?, if you have no deadline say 'no deadline'")
+    .setTimestamp();
 
 
+
+
+//m.channel.send("test")
 
     m.channel.send({
-        embed: utils.createembed("cake", "What’s your deadline?, if none say \"no\"")
+        embed: embed
     }).then(function(m) {
-        //got deadline
-        const filter = m => m.author == user;
-        const collector = message.channel.createMessageCollector(filter, {
-            time: 15000
+  //      m.channel.send("t2")
+    //    console.log("che\nck?" + user == m.author)
+        const filter = message => message.author == user;
+        const collector = m.channel.createMessageCollector(filter, {
+            time: 150000
         });
         collector.on('collect', m => {
+            //got deadline
             status[user.id]["deadline"] = m.content;
             red.set("deadline" + m.channel.name, m.content, redis.print);
             collector.stop()
 
             var embed = new Discord.RichEmbed()
                 .setColor('#36393f')
-                .addField(`Hey ${message.author.username}!`,
+                .addField(`Hey ${user.username}!`,
                     "Your request has been sent to our freelancers")
                 .setTimestamp();
 
@@ -138,9 +87,9 @@ function requestdeadline(user, m) {
                 embed: embed
             })
             var role;
-            var channel = client.channels.get('518433045330526243');
+            var channel = client.channels.get('534388019390578698');
 
-            console.log(status[user.id]["role"]);
+            console.log("role:" + status[user.id]["role"]);
             if (channel.guild.roles.find('name', status[user.id]["role"]) != undefined) {
                 role = channel.guild.roles.find('name', status[user.id]["role"]).toString()
             } else {
@@ -154,7 +103,7 @@ function requestdeadline(user, m) {
                 //  .setThumbnail(`https://ferox.host/assets/images/logo.png`)
                 //.setImage('https://ferox.host/assets/images/logo.png')
                 .addField(`Client`, m.author, true)
-                .addField(`request`, status[user.id]["message"], true)
+                .addField(`Request`, status[user.id]["message"])
                 .addField(`Budget`, status[user.id]["budget"], true)
                 .addField(`Deadline`, status[user.id]["deadline"], true)
                 .addField(`Role`, role, true)
@@ -178,8 +127,10 @@ function welcomemsg(username, c, callback) {
     var embed = new Discord.RichEmbed()
         .setColor('#36393f')
         .addField(`Hey ${username}!`,
-            `Please try explain your request in as much detail as possible. Our **Freelancers** will be here soon to help.\n
-        Possible services:\n
+            `I will guide you through your ordering process.
+
+        Possible services:
+
 -<@&518425577611329546>
 -<@&521064310022340629>
 -<@&521064274617958411>
@@ -192,12 +143,10 @@ function welcomemsg(username, c, callback) {
 -<@&518425579406753803>
 -<@&521064548761862145>
 
-Please mention one of the above roles
+Please mention the role that matches with the service you need.
 
-        
-
-        
-        `)
+If you have any questions do -question and our support representatives will help you out.
+`)
         .setTimestamp();
 
     c.send({
@@ -221,147 +170,137 @@ client.on('messageReactionAdd', (reaction, user) => {
         return
     }
     reaction.remove(user);
+var nid = ("" + Math.random() * 1000 + "").substring(0, 4);
+ //   if (message.guild.channels.exists("name", "ticket-" + utils.shorten(message.author.id))) {
+   //     return
+  //  }
 
-    if (message.guild.channels.exists("name", "ticket-" + utils.shorten(message.author.id))) {
-        return
-    }
+
+  red.get(
+    "ticketcount" + user.id,
+    function(err, count) {
+if(count == null || parseInt(count) < 4){
+if(count == null){
+    red.set("ticketcount" + user.id, 1, redis.print);
+}else{
+    red.incr("ticketcount" + user.id, redis.print);
+}
 
 
-    message.guild.createChannel(`ticket-${utils.shorten(message.author.id)}`, "text").then(c => {
+    message.guild.createChannel(`ticket-${nid}`, "text", [{
+        deny: ['SEND_MESSAGES', 'READ_MESSAGES'],
+        id: message.guild.id
+       
+
+
+    }]).then(c => {
         c.setParent('518411134953586690');
         
-        utils.createchannel(reaction.message, c);
-        c.send("<@" + reaction.message.author.id + ">").then(function(messy) {
-            messy.delete();
-            
-        })
-        red.set("client" + c.name, reaction.message.author.id, redis.print);
-        welcomemsg(reaction.message.author.username, c, function(message) {
-            ticketchannel = message;
-
-            // Wait for role and requirement
-            var userfilter = m => m.author == user;
-            var rolecollector = message.channel.createMessageCollector(userfilter, {
-                time: 30000
-            });
-            rolecollector.on('collect', m => {
-
-                //check if role is mentioned
-                rolecollector.stop();
-                console.log(m.mentions.roles);
-                if (m.mentions.roles.first() == undefined) {
-                    status[user.id]["role"] = "not specified"
-                    console.log("nonspecified")
-                    red.set("role" + m.channel.name, "not specified", redis.print);
-                } else {
-                    console.log(m.mentions.roles.first().name)
-                    status[user.id]["role"] = m.mentions.roles.first().name
-                    red.set("role" + m.channel.name, m.mentions.roles.first().name, redis.print);
-                }
-                
-
-                //reply with mentioned role
+        utils.createchannel(reaction.message, c, function(){
 
 
-                m.channel.send({
-                    embed: utils.createembed(message.author.username, "A " + m.mentions.roles.first().name + " Will be requested for this commission\n please specify your needs now.")
-                })
 
-
-                var filter = m => m.author == user;
-                var collector = message.channel.createMessageCollector(filter, {
-                    time: 30000
+            welcomemsg(reaction.message.author.username, c, function(message) {
+                ticketchannel = message;
+    
+                // Wait for role and requirement
+                var userfilter = m => m.author == user;
+                var rolecollector = message.channel.createMessageCollector(userfilter, {
+                    time: 300000
                 });
-                collector.on('collect', m => {
-                    collector.stop();
+                rolecollector.on('collect', m => {
+    
+                    //check if role is mentioned
+                    
+                    console.log(m.mentions.roles);
+                    if (m.mentions.roles.first() == undefined) {
+                        // status[user.id]["role"] = "not specified"
+                        // console.log("nonspecified")
+                        // red.set("role" + m.channel.name, "not specified", redis.print);
 
-                    //replace tag with name
-
-                    status[user.id]["message"] = m.content
-                    red.set("message" + m.channel.name, m.content, redis.print);
-
-                    var channel = client.channels.get('518433045330526243');
-
-                    //ask for budget
+m.channel.send("Invalid role");
+                        
+                    } else {
+                        console.log(m.mentions.roles.first().name)
+                        rolecollector.stop();
+                        status[user.id]["role"] = m.mentions.roles.first().name
+                        red.set("role" + m.channel.name, m.mentions.roles.first().name, redis.print);
+                    
+                    
+    
+                    //reply with mentioned role
+    
+    
                     m.channel.send({
-                        embed: utils.createembed(message.author.username, "Do you have a budget? Press on the ‘n’ emoji for no, specify it if yes.")
-                    }).then(function(m) {
-                        m.react("🇳");
-
-                        const nofilter = (reaction, user) => reaction.emoji.name === "🇳" && !user.bot;
-                        const reactioncollector = m.createReactionCollector(nofilter, {
-                            time: 30000
-                        });
-                        const filter = m => m.author == user;
-                        const collector = message.channel.createMessageCollector(filter, {
-                            time: 30000
-                        });
-
-                        reactioncollector.on('collect', reaction => {
-                            reactioncollector.stop();
-                            status[user.id]["budget"] = "quote";
-                            red.set("budget" + m.channel.name, "quote", redis.print);
-                            requestdeadline(user, reaction.message)
-                        });
-                        collector.on('collect', m => {
-                            collector.stop();
-                            status[user.id]["budget"] = m.content;
-                            red.set("budget" + m.channel.name, m.content, redis.print);
-                            requestdeadline(user, m);
-                        });
-
+                        embed: utils.createembed(message.author.username, "A " + m.mentions.roles.first().name + " will be requested for this commission\n please specify your needs now.")
+                    })
+    
+    
+                    var filter = m => m.author == user;
+                    var collector = message.channel.createMessageCollector(filter, {
+                        time: 300000
                     });
-                });
-            })
+                    collector.on('collect', m => {
+                        
+    
+                        //replace tag with name
+    if(m.content.length < 1000){
+        collector.stop();
+    
+        status[user.id]["message"] = m.content
+        red.set("message" + m.channel.name, m.content, redis.print);
+    
+    //    var channel = client.channels.get('518433045330526243');
+    
+        //ask for budget
+        m.channel.send({
+            embed: utils.createembed(message.author.username, "Do you have a budget? Say 'quote' if not, specify it if yes.")
+        }).then(function(m) {
+            
+    
+    
+            const filter = m => m.author == user;
+            const collector = message.channel.createMessageCollector(filter, {
+                time: 300000
+            });
+    
+    
+            collector.on('collect', m => {
+                collector.stop();
+                status[user.id]["budget"] = m.content;
+                red.set("budget" + m.channel.name, m.content, redis.print);
+                requestdeadline(user, m);
+            });
+    
         });
-
-    });
-});
-
-
-
-
-//no
-client.commands = new Discord.Collection();
-fs.readdir("./commands/", (err, files) => {
-    if (err) console.error(err);
-
-    let jsfiles = files.filter(f => f.split(".").pop() === "js");
-    if (jsfiles.length <= 0) {
-        console.log("Oops, no commands!");
-        return;
+    }else{
+        m.channel.send("Please use a message under 1000 characters or use https://hastebin.com")
     }
+    
+                    });
 
-    console.log(`Loading ${jsfiles.length} command(s)!`);
+                }
 
-    jsfiles.forEach((f, i) => {
-        let props = require(`./commands/${f}`);
-        console.log(`${i + 1}: ${f} loaded!`);
-        if (props.command.info != undefined) {
-            commands.set(props.command.name, props.command.info);
-        } else {
-            commands.set(props.command.name, "-" + props.command.name);
-        }
-        client.commands.set(props.command.name, props);
+                })
+            });
+            c.send("<@" + reaction.message.author.id + ">").then(function(messy) {
+                messy.delete();
+                
+            })
+            red.set("client" + c.name, reaction.message.author.id, redis.print);
+        });
+        
 
+    });
+
+}else{
+    user.send("You already have too many tickets opened.")
+}
     });
 });
 
 
-client.on("message", (message) => {
-    console.log("command requested")
-
-    if (!message.content.startsWith(prefix) || message.channel.type == "dm" || message.author.bot) {
-        return
-    };
-    let args = message.content.trim().split(' ');
-    //   let cmd = client.commands.get(message.content.slice(1));
-    console.log(message.content.slice(1).split(" ").slice(0, 1).join(" "));
-    let cmd = client.commands.get(message.content.slice(1).split(" ").slice(0, 1).join(" "));
-    if (cmd) cmd.run(Discord, client, message, commands, args);
-
-});
 
 
-// Logs in using the bots token.
+
 client.login(config.bot_token);

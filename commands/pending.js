@@ -8,7 +8,7 @@ module.exports.run = async (Discord, client, message, args) => {
             const embed = new Discord.RichEmbed()
             .setColor('#36393f')
             .addField(`Hey ${message.author.username}!`,
-                `Thanks for your payment, our freelancer will get started now`)
+                `Thanks for your payment. Our freelancer will get started now`)
             .setTimestamp();
           
           

@@ -14,6 +14,14 @@ var embed = new Discord.RichEmbed()
             .setTimestamp();
         message.channel.send({
             embed: embed
+        }).then(function(m){
+          setTimeout(function () {
+            m.delete()
+            message.delete();
+          }, 3000)
+
+
+
         })
 
 

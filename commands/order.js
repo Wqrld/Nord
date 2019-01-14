@@ -1,7 +1,4 @@
-function shorten(text) {
 
-    return text.substring(0, 4);
-}
 function createchannel(message, c){
             let role = message.guild.roles.find("name", "💬 | Support Team");
             let role2 = message.guild.roles.find("name", "@everyone");
@@ -22,9 +19,9 @@ function createchannel(message, c){
 module.exports.run = async (Discord, client, message, args) => {
 
  var reason = message.content.split(" ").slice(1).join(" ");
-        if (message.guild.channels.exists("name", "order-" + shorten(message.author.id))) return message.channel.send(`You already have a order open.`);
+       // if (message.guild.channels.exists("name", "order-" + shorten(message.author.id))) return message.channel.send(`You already have a order open.`);
 
-        id = shorten(message.author.id);
+       var id = "" + Math.random() * 1000 + "".substring(0, 4);
         message.guild.createChannel(`order-${id}`, "text").then(c => {
             c.setTopic(reason)
             c.setParent('495344580237983747');

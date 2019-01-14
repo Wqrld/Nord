@@ -1,5 +1,7 @@
 var paypal = require('paypal-rest-sdk');
 var item = require('../item.json');
+var redis = require("redis"),
+    red = redis.createClient();
 var config = require('../config.json');
 
 const fetch = require('node-fetch');
@@ -40,6 +42,20 @@ module.exports.run = async (Discord, client, message, args) => {
 
 
             confirmc.on('collect', async reaction => {
+                message.channel.send("Closing...")
+                red.get(
+                    "client" + message.channel.name.replace("complete", "ticket"),
+                    function(err, client) {
+                        red.get("closed" + message.channel.id, function(err, closed) {
+                            if (closed != "tr") {
+                                red.set("closed" + message.channel.id, "tr", redis.print);
+                                red.decr("ticketcount" + client, redis.print);
+                            }
+
+                        });
+
+                    });
+
                 
                 if (message.channel.name.startsWith(`ticket-`) && message.channel.topic != undefined) {
 
@@ -56,59 +72,54 @@ module.exports.run = async (Discord, client, message, args) => {
 
                         });
                     }
-                    
+
 
                 }
 
-                    await message.channel.fetchMessages({
-                        limit: 100
-                    }).then(function(messages) {
-
-                       console.log(reaction);
-
-                        fetch('https://hastebin.com/documents', {
-                                method: 'POST',
-                                body: messages.array().reverse().join("\n"),
-                                timeout: 3000
-                            })
-                            .then(res => res.json()) // expecting a json response
-                            .then(json => {
-
-                                
-                                console.log(reaction);
-                                //json.key
-                                var channel = client.channels.get('521262479779692584');
-                                
-                                   
-                                
-                                channel.send("Transscript for " + message.channel.name + ": \nhttps://hastebin.com/" + json.key);
-                                
+                await message.channel.fetchMessages({
+                    limit: 100
+                }).then(function(messages) {
 
 
-                                m.channel.delete();
-                            }).catch(err => {
-                                var channel = client.channels.get('521262479779692584');
+                    messages = messages.array().reverse();
+                    var newmsgs = ""
+                    for (i = 0; i < messages.length; i++) {
+                        newmsgs += messages[i].author.username + ": " + messages[i].content + "\n"
+                    }
+                    //should be fine.
+
+                    fetch('https://hastebin.com/documents', {
+                            method: 'POST',
+                            body: newmsgs,
+                            timeout: 3000
+                        })
+                        .then(res => res.json()) // expecting a json response
+                        .then(json => {
+
+                            //json.key
+                            var channel = client.channels.get('521262479779692584');
+
+                            channel.send("Transscript for " + message.channel.name + ": \nhttps://hastebin.com/" + json.key);
+
+                            m.channel.delete();
+                        }).catch(err => {
+                            var channel = client.channels.get('521262479779692584');
                             channel.send("Transscript for " + message.channel.name + ": Hastebin error, is it down?");
                             m.channel.delete();
-                            });
-
-                        
-                   
-
-
-                            
-
-
-                    });
+                        });
 
 
 
-                
+
+                });
+
+
+
 
             });
         });
 }
-        
+
 
 module.exports.command = {
     name: "close"

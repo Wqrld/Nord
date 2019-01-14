@@ -25,8 +25,18 @@ module.exports.run = async (Discord, client, message, args) => {
                 .setFooter("Invoice status")
                // .setThumbnail(`https://ferox.host/assets/images/logo.png`)
                 //.setImage('https://ferox.host/assets/images/logo.png')
-                .addField(`Status`, invoice.status)
+                
                 .setTimestamp();
+
+if(invoice.status == "SENT"){
+embed.addField(`Status`, "unpaid")
+}else if (invoice.status == "PAID"){
+    embed.addField(`Status`, "paid")
+}else{
+    embed.addField(`Status`, invoice.status)
+}
+
+
             message.channel.send({
                 embed: embed
             });
