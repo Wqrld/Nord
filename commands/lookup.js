@@ -15,7 +15,7 @@ module.exports.run = async (Discord, client, message, commands, args) => {
         .setFooter("Order")
         .setThumbnail(`https://cdn.discordapp.com/icons/517394741911093268/dcb6541de2cfe06300aa132a40b8cbff.webp`)
         //.setImage('https://ferox.host/assets/images/logo.png')
-        .addField(`Order` , ` React with 🎟 to open up a ticket`)
+        .addField(`Order` , ` React with 🎟 to open a ticket.`)
         .setTimestamp();
     message.channel.send({
         embed: embed

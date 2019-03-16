@@ -23,7 +23,7 @@ var commands = new Map();
 Array.prototype.random = function() {
     return this[Math.floor((Math.random() * this.length))];
 }
-
+var ct = 86400000
 
 client.on("ready", () => {
     client.user.setActivity(config.name, { type: 'STREAMING', url: "https://www.twitch.tv/monstercat" });
@@ -53,8 +53,8 @@ function requestdeadline(user, m) {
     console.log("requestdeadline")
     var embed = new Discord.RichEmbed()
     .setColor('#36393f')
-    .addField(`Hey!`,
-    "What’s your deadline?, if you have no deadline say 'no deadline'")
+    .addField(`Order Assistant`,
+    "What’s your deadline?\n If you have no deadline say 'no deadline'.")
     .setTimestamp();
 
 
@@ -69,7 +69,7 @@ function requestdeadline(user, m) {
     //    console.log("che\nck?" + user == m.author)
         const filter = message => message.author == user;
         const collector = m.channel.createMessageCollector(filter, {
-            time: 150000
+            time: ct
         });
         collector.on('collect', m => {
             //got deadline
@@ -79,7 +79,7 @@ function requestdeadline(user, m) {
 
             var embed = new Discord.RichEmbed()
                 .setColor('#36393f')
-                .addField(`Hey ${user.username}!`,
+                .addField(`Order Assistant`,
                     "Your request has been sent to our freelancers")
                 .setTimestamp();
 
@@ -206,8 +206,17 @@ if(count == null){
                 // Wait for role and requirement
                 var userfilter = m => m.author == user;
                 var rolecollector = message.channel.createMessageCollector(userfilter, {
-                    time: 300000
+                    time: ct
                 });
+
+
+                c.send("<@" + reaction.message.author.id + ">").then(function(messy) {
+                    messy.delete();
+                    
+                })
+
+
+
                 rolecollector.on('collect', m => {
     
                     //check if role is mentioned
@@ -232,13 +241,13 @@ m.channel.send("Invalid role");
     
     
                     m.channel.send({
-                        embed: utils.createembed(message.author.username, "A " + m.mentions.roles.first().name + " will be requested for this commission\n please specify your needs now.")
+                        embed: utils.createembed(message.author.username, "Please specify your needs now.")
                     })
     
     
                     var filter = m => m.author == user;
                     var collector = message.channel.createMessageCollector(filter, {
-                        time: 300000
+                        time: ct
                     });
                     collector.on('collect', m => {
                         
@@ -261,15 +270,49 @@ m.channel.send("Invalid role");
     
             const filter = m => m.author == user;
             const collector = message.channel.createMessageCollector(filter, {
-                time: 300000
+                time: ct
             });
     
     
             collector.on('collect', m => {
                 collector.stop();
                 status[user.id]["budget"] = m.content;
+
                 red.set("budget" + m.channel.name, m.content, redis.print);
+
+
+                m.channel.send({
+                    embed: utils.createembed(message.author.username, "Would you like to pay 50/50 or 100% upfront?\nPlease say `50/50` or `100%`")
+                }).then(function(m) {
+
+                const filter = m => m.author == user;
+                const collector = message.channel.createMessageCollector(filter, {
+                    time: ct
+                });
+
+                collector.on('collect', m => {
+                    collector.stop();
+
+if(m.content.indexOf("5") !== -1){
+    red.set("5050" + c.name, "5050", redis.print);
+
+}else{
+
+}
+                    
                 requestdeadline(user, m);
+                });
+
+
+            });
+
+
+
+
+
+
+
+
             });
     
         });
@@ -283,10 +326,7 @@ m.channel.send("Invalid role");
 
                 })
             });
-            c.send("<@" + reaction.message.author.id + ">").then(function(messy) {
-                messy.delete();
-                
-            })
+           
             red.set("client" + c.name, reaction.message.author.id, redis.print);
         });
         

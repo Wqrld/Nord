@@ -21,7 +21,7 @@ module.exports.run = async (Discord, client, message, args) => {
 
     if (!message.channel.name.startsWith(`ticket-`) && !message.channel.name.startsWith(`complete-`)) return message.channel.send(`You can't use the close command outside of a ticket channel.`);
     // Confirm delete - with timeout (Not command)
-
+var cli;
     const embed = new Discord.RichEmbed()
         .setColor(0x55acee)
         .setTitle("Close")
@@ -46,6 +46,7 @@ module.exports.run = async (Discord, client, message, args) => {
                 red.get(
                     "client" + message.channel.name.replace("complete", "ticket"),
                     function(err, client) {
+                        cli = client;
                         red.get("closed" + message.channel.id, function(err, closed) {
                             if (closed != "tr") {
                                 red.set("closed" + message.channel.id, "tr", redis.print);
@@ -88,7 +89,7 @@ module.exports.run = async (Discord, client, message, args) => {
                     }
                     //should be fine.
 
-                    fetch('https://hastebin.com/documents', {
+                    fetch('https://transcripts.nord.services/documents', {
                             method: 'POST',
                             body: newmsgs,
                             timeout: 3000
@@ -99,12 +100,28 @@ module.exports.run = async (Discord, client, message, args) => {
                             //json.key
                             var channel = client.channels.get('521262479779692584');
 
-                            channel.send("Transscript for " + message.channel.name + ": \nhttps://hastebin.com/" + json.key);
+                        //    channel.send("Transcript for " + message.channel.name + ": \nhttps://hastebin.com/" + json.key);
+
+                            const embed = new Discord.RichEmbed()
+                            .setColor(0x55acee)
+                            .setTitle("Ticket closed")
+                            .setFooter("Bot by Wqrld")
+                            .addField(`Ticket`, message.channel.name)
+                            .addField(`Transcript`, "https://transcripts.nord.services/" + json.key)
+                            .addField(`Client`, "<@" + cli + ">")
+                            .setTimestamp();
+                        channel.send({
+                                embed: embed
+                            })
+
+
+
+
 
                             m.channel.delete();
                         }).catch(err => {
                             var channel = client.channels.get('521262479779692584');
-                            channel.send("Transscript for " + message.channel.name + ": Hastebin error, is it down?");
+                            channel.send("Transcript for " + message.channel.name + ": Hastebin error, is it down?");
                             m.channel.delete();
                         });
 

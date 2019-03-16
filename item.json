@@ -1,17 +1,17 @@
 {
     
     "merchant_info": {
-        "email": "hjason@mail.ccsf.edu",
-        "business_name": "Nord"
+        "email": "valnerthomas@gmail.com",
+        "business_name": "Eternity Studios"
     },
     "billing_info": [{
-        "email": "hjason@mail.ccsf.edu"
+        "email": "valnerthomas@gmail.com"
     }],
     "items": [{
-        "name": "Nord",
+        "name": "NORD",
         "quantity": 1,
         "unit_price": {
-            "currency": "EUR",
+            "currency": "USD",
             "value": 1
         }
     }],
